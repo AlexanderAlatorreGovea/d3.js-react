@@ -1,6 +1,5 @@
 import { useEffect, useCallback, useState } from "react";
 import * as d3 from "d3";
-import "./App.css";
 
 const width = 960;
 const height = 500;
@@ -9,7 +8,7 @@ const centerY = height / 2;
 
 const pieArc = d3.arc().innerRadius(0).outerRadius(width);
 
-function App() {
+function RadialBurst() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -73,4 +72,6 @@ function App() {
   );
 }
 
-export default App;
+export default RadialBurst;
+
+export default RadialBurst;
