@@ -5,7 +5,6 @@ const width = 960;
 const height = 500;
 const centerX = width / 2;
 const centerY = height / 2;
-
 const pieArc = d3.arc().innerRadius(0).outerRadius(width);
 
 function RadialBurst() {

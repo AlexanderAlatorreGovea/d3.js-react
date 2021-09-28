@@ -4,38 +4,25 @@ import "./App.css";
 
 const width = 960;
 const height = 500;
-const centerX = width / 2;
-const centerY = height / 2;
-
-const pieArc = d3.arc().innerRadius(0).outerRadius(width);
-
+const margin = {
+  top: 20,
+  right: 20,
+  bottom: 20,
+  left: 20,
+};
+const csvUrl =
+  "https://gist.githubusercontent.com/curran/0ac4077c7fc6390f5dd33bf5c06cb5ff/raw/605c54080c7a93a417a3cea93fd52e7550e76500/UN_Population_2019.csv";
 function App() {
   const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
   useEffect(() => {
-    const getData = async () => {
-      setLoading(true);
-      try {
-        const response = await fetch(
-          "https://gist.githubusercontent.com/AlexanderAlatorreGovea/417bf7488184368b470634e46e8a3f4e/raw/a01cb2212be24b82767ce1b8eaf9f8581daa06ea/CSS%2520Named%2520Colors"
-        );
-
-        if (!response.ok) {
-          throw new Error("Something went wrong, please try again");
-        }
-
-        const text = await response.text();
-
-        setData(d3.csvParse(text));
-        setLoading(false);
-      } catch (error) {
-        setError(error.message);
-        setLoading(false);
-      }
+    const row = (d) => {
+      d.Population = +d["2020"];
+      return d;
     };
-    getData();
+    d3.csv(csvUrl, row).then((data) => {
+      setData(data.slice(0, 10));
+    });
   }, []);
 
   const message = (data) => {
@@ -50,24 +37,43 @@ function App() {
     return <pre>Loading...</pre>;
   }
 
-  const colorPie = d3.pie().value(1);
+  const innerHeight = height - margin.top - margin.bottom;
+  const innerWidth = width - margin.left - margin.right;
+
+  const yScale = d3
+    .scaleBand()
+    .domain(data.map((d) => d.Country))
+    .range([0, innerHeight]);
+
+  const xScale = d3
+    .scaleLinear()
+    .domain([0, d3.max(data, (d) => d.Population)])
+    .range([0, innerWidth]);
 
   return (
     <svg width={width} height={height}>
-      <g transform={`translate(${centerX},${centerY})`}>
-        {colorPie(data).map((d) => (
-          <path fill={d.data["RGB hex value"]} d={pieArc(d)}></path>
+      <g transform={`translate(${margin.left}, ${margin.top})`}>
+        {xScale.ticks().map((tickValue) => (
+          <g key={tickValue} transform={`translate(${xScale(tickValue)},0)`}>
+            <line y2={innerHeight} stroke="black" />
+            <text
+              style={{ textAnchor: "middle" }}
+              dy=".71em"
+              y={innerHeight + 3}
+            >
+              {tickValue}
+            </text>
+          </g>
         ))}
-        {/* {data.map((d, i) => (
-          <path
-            fill={d["RGB hex value"]}
-            d={pieArc({
-              startAngle: (i / data.length) * 2 * Math.PI,
-              endAngle: (((i + 1) / data.length) * 2 * Math.PI),
-            })}
-          ></path>
-        ))} */}
-        ;
+        {data.map((d, i) => (
+          <rect
+            key={i}
+            x={0}
+            y={yScale(d.Country)}
+            width={xScale(d.Population)}
+            height={yScale.bandwidth()}
+          />
+        ))}
       </g>
     </svg>
   );
