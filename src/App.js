@@ -1,81 +1,53 @@
-import { useEffect, useCallback, useState } from "react";
+import React, { useEffect, useCallback, useState, useRef } from "react";
 import * as d3 from "d3";
 import "./App.css";
+import { select } from "d3";
 
-const width = 960;
-const height = 500;
-const margin = {
-  top: 20,
-  right: 20,
-  bottom: 20,
-  left: 20,
-};
-const csvUrl =
-  "https://gist.githubusercontent.com/curran/0ac4077c7fc6390f5dd33bf5c06cb5ff/raw/605c54080c7a93a417a3cea93fd52e7550e76500/UN_Population_2019.csv";
 function App() {
-  const [data, setData] = useState(null);
+  const svgRef = useRef();
+  const [data, setData] = useState([20, 32, 33, 52, 20, 75]);
 
   useEffect(() => {
-    const row = (d) => {
-      d.Population = +d["2020"];
-      return d;
-    };
-    d3.csv(csvUrl, row).then((data) => {
-      setData(data.slice(0, 10));
-    });
-  }, []);
+    const svg = select(svgRef.current);
 
-  const message = (data) => {
-    let message = "";
-    message = Math.round(d3.csvFormat(data).length / 1024) + " kb";
-    message = message + data.length + " rows\n";
-    message = message + data.columns.length + " columns";
-    return message;
-  };
+    //creates a curved lined of the data
+    const myLine = d3
+      .line()
+      .x((value, index) => index * 50)
+      .y((value) => 150 - value)
+      .curve(d3.curveCardinal);
 
-  if (!data) {
-    return <pre>Loading...</pre>;
-  }
+    //selects the svg and add attributes to it
+    svg
+      .selectAll("path")
+      .data([data])
+      .join("path")
+      .attr("d", (value) => myLine(value))
+      .attr("fill", "none")
+      .attr("stroke", "blue");
 
-  const innerHeight = height - margin.top - margin.bottom;
-  const innerWidth = width - margin.left - margin.right;
-
-  const yScale = d3
-    .scaleBand()
-    .domain(data.map((d) => d.Country))
-    .range([0, innerHeight]);
-
-  const xScale = d3
-    .scaleLinear()
-    .domain([0, d3.max(data, (d) => d.Population)])
-    .range([0, innerWidth]);
+    // svg
+    //   .selectAll("circle")
+    //   .data(data)
+    //   .join(
+    //     (enter) => enter.append("circle"),
+    //     (update) => update.attr("class", "updated"),
+    //     (exit) => exit.remove()
+    //   );
+  }, [data]);
 
   return (
-    <svg width={width} height={height}>
-      <g transform={`translate(${margin.left}, ${margin.top})`}>
-        {xScale.ticks().map((tickValue) => (
-          <g key={tickValue} transform={`translate(${xScale(tickValue)},0)`}>
-            <line y2={innerHeight} stroke="black" />
-            <text
-              style={{ textAnchor: "middle" }}
-              dy=".71em"
-              y={innerHeight + 3}
-            >
-              {tickValue}
-            </text>
-          </g>
-        ))}
-        {data.map((d, i) => (
-          <rect
-            key={i}
-            x={0}
-            y={yScale(d.Country)}
-            width={xScale(d.Population)}
-            height={yScale.bandwidth()}
-          />
-        ))}
-      </g>
-    </svg>
+    <React.Fragment>
+      <svg ref={svgRef}>
+        <path d="M0,150 100, 100 150, 120" stroke="blue" fill="none" />
+      </svg>
+      <button onClick={() => setData(data.map((value) => value + 5))}>
+        Update Data
+      </button>
+      <button onClick={() => setData(data.filter((value) => value < 25))}>
+        Filter Data
+      </button>
+    </React.Fragment>
   );
 }
 
